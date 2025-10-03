@@ -1,0 +1,48 @@
+# Oggy CLI Configuration
+# This file defines how the agent should analyze your commits
+
+analysis:
+  # Enable/disable different analyzers
+  codeQuality: true
+  security: true
+  performance: true
+  bestPractices: true
+  documentation: true
+  
+  minScore: 70
+  
+  ignore:
+    - node_modules/**
+    - dist/**
+    - build/**
+    - "*.log"
+    - "*.lock"
+    - ".git/**"
+
+checks:
+  commitMessage: true
+  
+  testsIncluded: true
+  
+  breakingChanges: true
+  
+  complexity: true
+  
+  securityIssues: true
+
+agent:
+  verbosity: normal 
+  
+  generatePRDescription: true
+  
+  suggestImprovements: true
+  
+  maxSuggestions: 5
+
+project:
+
+  type: auto
+  
+  languages: auto
+  
+  frameworks: auto
