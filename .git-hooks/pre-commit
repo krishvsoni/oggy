@@ -1,0 +1,36 @@
+#!/usr/bin/env bash
+
+# Oggy Git Hook - Pre-commit
+# This hook runs Oggy analysis before committing
+
+echo "🤖 Running Oggy commit analysis..."
+
+# Check if Oggy is installed
+if ! command -v bun &> /dev/null; then
+    echo "⚠️  Bun not found. Skipping Oggy analysis."
+    exit 0
+fi
+
+# Check if GROQ_API_KEY is set
+if [ -z "$GROQ_API_KEY" ]; then
+    echo "⚠️  GROQ_API_KEY not set. Skipping Oggy analysis."
+    echo "   Set your API key in .env to enable commit analysis"
+    exit 0
+fi
+
+# Run Oggy analysis on unstaged changes
+cd "$(git rev-parse --show-toplevel)"
+bun run src/cli.ts analyze --unstaged
+
+# Get exit code
+RESULT=$?
+
+if [ $RESULT -ne 0 ]; then
+    echo ""
+    echo "❌ Commit analysis failed!"
+    echo "   Fix the issues above or use 'git commit --no-verify' to skip"
+    exit 1
+fi
+
+echo "✅ Commit analysis passed!"
+exit 0
