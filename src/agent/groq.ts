@@ -2,16 +2,16 @@ import Groq from 'groq-sdk';
 import type { AgentPlan, AgentThought } from '../types';
 
 export class GroqAgent {
-  private client: Groq;
-  private model: string;
+    private client: Groq;
+    private model: string;
 
-  constructor(apiKey: string, model: string = 'llama-3.1-70b-versatile') {
-    this.client = new Groq({ apiKey });
-    this.model = model;
-  }
+    constructor(apiKey: string, model: string = 'llama-3.1-70b-versatile') {
+        this.client = new Groq({ apiKey });
+        this.model = model;
+    }
 
-  async createPlan(task: string, context: string): Promise<AgentPlan> {
-    const prompt = `You are an expert code review agent. Your task is to create a detailed plan for analyzing a code commit.
+    async createPlan(task: string, context: string): Promise<AgentPlan> {
+        const prompt = `You are an expert code review agent. Your task is to create a detailed plan for analyzing a code commit.
 
 Task: ${task}
 
@@ -25,33 +25,33 @@ Create a detailed plan with:
 
 Respond in JSON format:
 {
-  "goal": "main goal",
-  "steps": ["step 1", "step 2", ...],
-  "estimatedComplexity": "low|medium|high"
+    "goal": "main goal",
+    "steps": ["step 1", "step 2", ...],
+    "estimatedComplexity": "low|medium|high"
 }`;
 
-    const response = await this.client.chat.completions.create({
-      messages: [{ role: 'user', content: prompt }],
-      model: this.model,
-      temperature: 0.3,
-      response_format: { type: 'json_object' }
-    });
+        const response = await this.client.chat.completions.create({
+            messages: [{ role: 'user', content: prompt }],
+            model: this.model,
+            temperature: 0.3,
+            response_format: { type: 'json_object' }
+        });
 
-    const content = response.choices[0]?.message?.content;
-    if (!content) {
-      throw new Error('No response from Groq API');
+        const content = response.choices[0]?.message?.content;
+        if (!content) {
+            throw new Error('No response from Groq API');
+        }
+
+        return JSON.parse(content) as AgentPlan;
     }
 
-    return JSON.parse(content) as AgentPlan;
-  }
+    async think(step: number, plan: AgentPlan, context: string, previousThoughts: AgentThought[]): Promise<AgentThought> {
+        const currentStep = plan.steps[step - 1];
+        const previousContext = previousThoughts.map(t => 
+            `Step ${t.step}: ${t.thought}\nAction: ${t.action}\nReasoning: ${t.reasoning}`
+        ).join('\n\n');
 
-  async think(step: number, plan: AgentPlan, context: string, previousThoughts: AgentThought[]): Promise<AgentThought> {
-    const currentStep = plan.steps[step - 1];
-    const previousContext = previousThoughts.map(t => 
-      `Step ${t.step}: ${t.thought}\nAction: ${t.action}\nReasoning: ${t.reasoning}`
-    ).join('\n\n');
-
-    const prompt = `You are an expert code review agent executing step ${step} of ${plan.steps.length}.
+        const prompt = `You are an expert code review agent executing step ${step} of ${plan.steps.length}.
 
 Goal: ${plan.goal}
 Current Step: ${currentStep}
@@ -66,39 +66,39 @@ Think through this step carefully. What should you do? What are you looking for?
 
 Respond in JSON format:
 {
-  "step": ${step},
-  "thought": "your analytical thought process",
-  "action": "what you will analyze in this step",
-  "reasoning": "why this is important"
+    "step": ${step},
+    "thought": "your analytical thought process",
+    "action": "what you will analyze in this step",
+    "reasoning": "why this is important"
 }`;
 
-    const response = await this.client.chat.completions.create({
-      messages: [{ role: 'user', content: prompt }],
-      model: this.model,
-      temperature: 0.5,
-      response_format: { type: 'json_object' }
-    });
+        const response = await this.client.chat.completions.create({
+            messages: [{ role: 'user', content: prompt }],
+            model: this.model,
+            temperature: 0.5,
+            response_format: { type: 'json_object' }
+        });
 
-    const content = response.choices[0]?.message?.content;
-    if (!content) {
-      throw new Error('No response from Groq API');
+        const content = response.choices[0]?.message?.content;
+        if (!content) {
+            throw new Error('No response from Groq API');
+        }
+
+        return JSON.parse(content) as AgentThought;
     }
 
-    return JSON.parse(content) as AgentThought;
-  }
+    async analyzeCode(
+        commitMessage: string,
+        codeContext: string,
+        analysisMetrics: any,
+        plan: AgentPlan,
+        thoughts: AgentThought[]
+    ): Promise<string> {
+        const thoughtsContext = thoughts.map(t => 
+            `Step ${t.step} - ${t.action}: ${t.reasoning}`
+        ).join('\n');
 
-  async analyzeCode(
-    commitMessage: string,
-    codeContext: string,
-    analysisMetrics: any,
-    plan: AgentPlan,
-    thoughts: AgentThought[]
-  ): Promise<string> {
-    const thoughtsContext = thoughts.map(t => 
-      `Step ${t.step} - ${t.action}: ${t.reasoning}`
-    ).join('\n');
-
-    const prompt = `You are an expert code review agent. Analyze this commit thoroughly.
+        const prompt = `You are an expert code review agent. Analyze this commit thoroughly.
 
 Commit Message: ${commitMessage}
 
@@ -132,46 +132,46 @@ Based on your plan and thoughts, provide a comprehensive analysis covering:
 
 Respond in JSON format:
 {
-  "score": 0-100,
-  "status": "ready|needs-work|not-ready",
-  "summary": "brief overall summary",
-  "issues": [
-    {
-      "severity": "critical|high|medium|low",
-      "category": "category name",
-      "message": "issue description",
-      "file": "optional file path",
-      "line": optional line number,
-      "suggestion": "optional fix suggestion"
-    }
-  ],
-  "suggestions": [
-    {
-      "category": "category name",
-      "message": "suggestion text",
-      "priority": "high|medium|low"
-    }
-  ],
-  "prDescription": "auto-generated PR description in markdown format"
+    "score": 0-100,
+    "status": "ready|needs-work|not-ready",
+    "summary": "brief overall summary",
+    "issues": [
+        {
+            "severity": "critical|high|medium|low",
+            "category": "category name",
+            "message": "issue description",
+            "file": "optional file path",
+            "line": optional line number,
+            "suggestion": "optional fix suggestion"
+        }
+    ],
+    "suggestions": [
+        {
+            "category": "category name",
+            "message": "suggestion text",
+            "priority": "high|medium|low"
+        }
+    ],
+    "prDescription": "auto-generated PR description in markdown format"
 }`;
 
-    const response = await this.client.chat.completions.create({
-      messages: [{ role: 'user', content: prompt }],
-      model: this.model,
-      temperature: 0.4,
-      response_format: { type: 'json_object' }
-    });
+        const response = await this.client.chat.completions.create({
+            messages: [{ role: 'user', content: prompt }],
+            model: this.model,
+            temperature: 0.4,
+            response_format: { type: 'json_object' }
+        });
 
-    const content = response.choices[0]?.message?.content;
-    if (!content) {
-      throw new Error('No response from Groq API');
+        const content = response.choices[0]?.message?.content;
+        if (!content) {
+            throw new Error('No response from Groq API');
+        }
+
+        return content;
     }
 
-    return content;
-  }
-
-  async generatePRTitle(commitMessage: string, summary: string): Promise<string> {
-    const prompt = `Generate a concise, descriptive PR title based on:
+    async generatePRTitle(commitMessage: string, summary: string): Promise<string> {
+        const prompt = `Generate a concise, descriptive PR title based on:
 Commit Message: ${commitMessage}
 Summary: ${summary}
 
@@ -183,13 +183,13 @@ Guidelines:
 
 Return only the title, nothing else.`;
 
-    const response = await this.client.chat.completions.create({
-      messages: [{ role: 'user', content: prompt }],
-      model: this.model,
-      temperature: 0.7,
-      max_tokens: 100
-    });
+        const response = await this.client.chat.completions.create({
+            messages: [{ role: 'user', content: prompt }],
+            model: this.model,
+            temperature: 0.7,
+            max_tokens: 100
+        });
 
-    return response.choices[0]?.message?.content?.trim() || commitMessage;
-  }
+        return response.choices[0]?.message?.content?.trim() || commitMessage;
+    }
 }

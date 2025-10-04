@@ -1,10 +1,32 @@
 {
   "name": "oggy",
+  "version": "0.1.0",
+  "description": "AI-powered CLI agent for commit analysis and PR readiness",
   "module": "index.ts",
   "type": "module",
-  "private": true,
+  "bin": {
+    "oggy": "./dist/cli.js"
+  },
+  "scripts": {
+    "build": "bun build src/cli.ts --outdir dist --target node --format esm",
+    "dev": "bun run src/cli.ts",
+    "start": "node dist/cli.js",
+    "setup-hooks": "node scripts/setup-hooks.js",
+    "postinstall": "echo '💡 Run: bun run setup-hooks to enable automatic commit analysis'"
+  },
+  "dependencies": {
+    "commander": "^11.1.0",
+    "chalk": "^5.3.0",
+    "ora": "^8.0.1",
+    "simple-git": "^3.22.0",
+    "groq-sdk": "^0.3.2",
+    "dotenv": "^16.4.1",
+    "js-yaml": "^4.1.0"
+  },
   "devDependencies": {
-    "@types/bun": "latest"
+    "@types/bun": "latest",
+    "@types/node": "^20.11.5",
+    "@types/js-yaml": "^4.0.9"
   },
   "peerDependencies": {
     "typescript": "^5"
