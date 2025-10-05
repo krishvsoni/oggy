@@ -48,6 +48,11 @@ report.[0-9]_.[0-9]_.[0-9]_.[0-9]_.json
 # caches
 .eslintcache
 .cache
+
+# Build artifacts
+*.exe
+oggy
+oggy-mac
 *.tsbuildinfo
 
 # IntelliJ based IDEs
