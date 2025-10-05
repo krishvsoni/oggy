@@ -4,8 +4,16 @@ echo Installing Oggy CLI globally...
 :: Create Oggy directory in Program Files
 if not exist "%ProgramFiles%\Oggy" mkdir "%ProgramFiles%\Oggy"
 
-:: Copy executable
-copy "oggy.exe" "%ProgramFiles%\Oggy\oggy.exe" >nul
+:: Download latest release
+echo Downloading latest Oggy release...
+powershell -Command "& {$response = Invoke-RestMethod -Uri 'https://api.github.com/repos/krishvsoni/oggy/releases/latest'; $downloadUrl = ($response.assets | Where-Object {$_.name -eq 'oggy.exe'}).browser_download_url; Invoke-WebRequest -Uri $downloadUrl -OutFile '%ProgramFiles%\Oggy\oggy.exe'}"
+
+if not exist "%ProgramFiles%\Oggy\oggy.exe" (
+    echo Failed to download oggy.exe
+    echo Please download manually from: https://github.com/krishvsoni/oggy/releases/latest
+    pause
+    exit /b 1
+)
 
 :: Add to PATH (requires admin privileges)
 setx PATH "%PATH%;%ProgramFiles%\Oggy" /M >nul 2>&1

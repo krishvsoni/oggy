@@ -17,37 +17,69 @@ An intelligent CLI agent that analyzes your commits before PR creation, similar 
 
 ### Installation
 
+#### Option 1: Download Pre-built Binary (Recommended)
+1. Go to [Releases](https://github.com/krishvsoni/oggy/releases/latest)
+2. Download the appropriate binary for your OS:
+   - **Windows**: `oggy.exe`
+   - **macOS**: `oggy-macos`
+   - **Linux**: `oggy-linux`
+3. Make it executable and move to PATH
+
+#### Option 2: Quick Install Script
+
+**Windows (PowerShell as Administrator):**
+```powershell
+# Download and run installer
+curl -o install.bat https://raw.githubusercontent.com/krishvsoni/oggy/main/install.bat
+.\install.bat
+```
+
+**Linux/macOS:**
 ```bash
-# Clone or navigate to your project
-cd your-project
+# Download and run installer
+curl -sSL https://raw.githubusercontent.com/krishvsoni/oggy/main/install.sh | bash
+```
+
+#### Option 3: Manual Installation
+```bash
+# Clone the repository
+git clone https://github.com/krishvsoni/oggy.git
+cd oggy
 
 # Install dependencies
 bun install
 
-# Initialize Oggy
-bun run src/cli.ts init
+# Build the executable
+bun run build
+
+# The executable will be created as oggy.exe (Windows) or oggy (Unix)
 ```
 
 ### Setup
 
+The executable comes with built-in configuration, but you can customize it:
+
 1. Get your Groq API key from [console.groq.com](https://console.groq.com)
-2. Add it to `.env`:
+2. Create a `.env` file in your project:
     ```
     GROQ_API_KEY=your_api_key_here
     ```
-3. Customize `oggy.config.yaml` to your needs
+3. Initialize Oggy in your project:
+    ```bash
+    oggy init
+    ```
 
 ### Usage
 
 ```bash
 # Analyze latest commit
-bun run src/cli.ts analyze
+oggy analyze
 
 # Analyze specific commit
-bun run src/cli.ts analyze --commit abc123
+oggy analyze --commit abc123
 
 # Analyze unstaged changes
-bun run src/cli.ts analyze --unstaged
+oggy analyze --unstaged
 
 # Save report to file
 bun run src/cli.ts analyze --output report.md
