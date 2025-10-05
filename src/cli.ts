@@ -1,4 +1,4 @@
-#!/usr/bin/env node
+#!/usr/bin/env bun
 
 import { Command } from 'commander';
 import chalk from 'chalk';
@@ -78,7 +78,7 @@ program
       }
 
      
-      const model = options.model || process.env.GROQ_MODEL || 'llama-3.1-70b-versatile';
+      const model = options.model || process.env.GROQ_MODEL || 'llama-3.3-70b-versatile';
       const orchestrator = new AgentOrchestrator(apiKey, config, model);
 
       console.log(chalk.gray(`Using model: ${model}\n`));

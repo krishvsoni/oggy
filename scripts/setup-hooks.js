@@ -22,7 +22,7 @@ try {
   if (fs.existsSync(hookSource)) {
     fs.copyFileSync(hookSource, hookDest);
     
-    if (process.platform !== 'win32') {
+      if (process.platform !== 'win32') {
       fs.chmodSync(hookDest, '755');
     }
     

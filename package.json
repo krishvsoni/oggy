@@ -5,7 +5,7 @@
   "module": "index.ts",
   "type": "module",
   "bin": {
-    "oggy": "./dist/cli.js"
+    "oggy": "./src/cli.ts"
   },
   "scripts": {
     "build": "bun build src/cli.ts --outdir dist --target node --format esm",
