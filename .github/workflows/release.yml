@@ -21,9 +21,15 @@ jobs:
           - os: ubuntu-latest
             target: bun-linux-x64
             artifact: oggy-linux
+          - os: ubuntu-latest
+            target: bun-linux-arm64
+            artifact: oggy-linux-arm64
           - os: macos-latest
             target: bun-darwin-x64
             artifact: oggy-macos
+          - os: macos-latest
+            target: bun-darwin-arm64
+            artifact: oggy-macos-arm64
 
     steps:
       - name: Checkout code
@@ -61,7 +67,9 @@ jobs:
           files: |
             oggy.exe/oggy.exe
             oggy-linux/oggy-linux
+            oggy-linux-arm64/oggy-linux-arm64
             oggy-macos/oggy-macos
+            oggy-macos-arm64/oggy-macos-arm64
           draft: false
           prerelease: false
         env:
