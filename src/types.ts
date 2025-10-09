@@ -5,6 +5,8 @@ export interface Config {
     performance: boolean;
     bestPractices: boolean;
     documentation: boolean;
+    productionReadiness?: boolean;
+    e2eTests?: boolean;
     minScore: number;
     ignore: string[];
   };
@@ -14,17 +16,22 @@ export interface Config {
     breakingChanges: boolean;
     complexity: boolean;
     securityIssues: boolean;
+    typeChecking?: boolean;
+    linting?: boolean;
+    formatting?: boolean;
   };
   agent: {
     verbosity: 'quiet' | 'normal' | 'verbose';
     generatePRDescription: boolean;
     suggestImprovements: boolean;
     maxSuggestions: number;
+    focusAreas?: string[];
   };
   project: {
     type: string;
     languages: string | string[];
     frameworks: string | string[];
+    productionEnvironment?: boolean;
   };
 }
 

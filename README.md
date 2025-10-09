@@ -1,243 +1,323 @@
-# Oggy - AI Commit Analyzer
+# Oggy - AI-Powered Code Analysis CLI
 
-An intelligent CLI agent that analyzes your commits before PR creation, similar to CodeRabbit but running locally with open-source integrations.
+An intelligent CLI agent that provides comprehensive code analysis for commits, entire codebases, and production readiness. Built with AI-powered insights for modern development workflows.
 
 ## Features
 
-- **AI-Powered Analysis** - Uses Groq's fast LLM API for intelligent code review
-- **Agent-Based Architecture** - Proper planning and reasoning process, not just simple prompts
-- **Comprehensive Checks** - Code quality, security, performance, best practices, documentation
-- **Detailed Reports** - Clear scoring and actionable suggestions
-- **PR Readiness** - Validates commits before you create pull requests
-- **Beautiful CLI** - Colorful, informative terminal output
-- **Highly Configurable** - Customize analysis rules via YAML config
-- **100% Open Source** - Uses only open-source integrations
+- AI-Powered Analysis - Advanced LLM-based code review using Groq's fast inference
+- Agent Architecture - Intelligent planning and reasoning, not just simple prompts
+- Comprehensive Checks - Code quality, security, performance, production readiness
+- Multi-Language Support - TypeScript, JavaScript, Python, Java, Go, Rust, C++, and more
+- Framework-Aware - React, Vue, Angular, Django, Spring, Express, and many others
+- Production-Ready Analysis - Enterprise-grade quality checks and deployment readiness
+- Detailed Reports - File-specific issues with line numbers and actionable suggestions
+- End-to-End Testing - E2E test analysis and recommendations
+- Git Integration - Analyze commits, unstaged changes, or remote repositories
+- Beautiful CLI - Colorful, informative terminal output with progress indicators
+- Highly Configurable - Customize analysis rules via YAML configuration
+- Cross-Platform - Native binaries for Windows, macOS (Intel & Apple Silicon), and Linux
 
 ## Quick Start
 
 ### Installation
 
-#### Option 1: Download Pre-built Binary (Recommended)
-1. Go to [Releases](https://github.com/krishvsoni/oggy/releases/latest)
-2. Download the appropriate binary for your OS:
-   - **Windows**: `oggy.exe`
-   - **macOS**: `oggy-macos`
-   - **Linux**: `oggy-linux`
-3. Make it executable and move to PATH
+#### Option 1: One-Line Install (Recommended)
 
-#### Option 2: Quick Install Script
-
-**Windows (PowerShell as Administrator):**
+Windows (PowerShell as Administrator):
 ```powershell
-# Download and run installer
-curl -o install.bat https://raw.githubusercontent.com/krishvsoni/oggy/main/install.bat
-.\install.bat
+iwr "https://raw.githubusercontent.com/krishvsoni/oggy/main/Install-Oggy.ps1" -OutFile "Install-Oggy.ps1"; .\Install-Oggy.ps1
 ```
 
-**Linux/macOS:**
+Linux/macOS:
 ```bash
-# Download and run installer
 curl -sSL https://raw.githubusercontent.com/krishvsoni/oggy/main/install.sh | bash
 ```
 
-#### Option 3: Manual Installation
+#### Option 2: Manual Download
+1. Go to [Releases](https://github.com/krishvsoni/oggy/releases/latest)
+2. Download the binary for your platform:
+    - Windows: `oggy.exe`
+    - macOS Intel: `oggy-macos` 
+    - macOS Apple Silicon: `oggy-macos-arm64`
+    - Linux x64: `oggy-linux`
+    - Linux ARM64: `oggy-linux-arm64`
+3. Make executable and add to PATH
+
+### Setup
+
+1. Get your Groq API key:
+    - Visit [console.groq.com](https://console.groq.com)
+    - Sign up/login → API Keys → Create new key
+
+2. Initialize Oggy in your project:
+    ```bash
+    oggy init                    # Basic setup
+    oggy init --production       # Production-ready setup
+    oggy init --language python # Language-specific setup
+    ```
+
+3. Configure your API key:
+    ```bash
+    oggy setup                   # Interactive setup
+    # Or manually add to .env:
+    # GROQ_API_KEY=your_api_key_here
+    ```
+
+## Usage
+
+### Basic Analysis
 ```bash
-# Clone the repository
+# Analyze latest commit
+oggy analyze
+
+# Analyze unstaged changes
+oggy analyze --unstaged
+
+# Analyze specific commit
+oggy analyze --commit abc123
+
+# Analyze entire codebase
+oggy analyze --whole-codebase
+```
+
+### Advanced Analysis
+```bash
+# Production readiness check
+oggy analyze --production
+
+# With end-to-end testing analysis
+oggy analyze --e2e-tests
+
+# Analyze remote repository
+oggy analyze --git-url https://github.com/user/repo.git
+
+# Save detailed report
+oggy analyze --output report.md
+
+# Use different AI model
+oggy analyze --model llama-3.1-8b-instant
+```
+
+### Configuration
+```bash
+# View current configuration
+oggy config
+
+# Initialize with custom options
+oggy init --production --language typescript --framework react
+```
+
+## How It Works
+
+### Intelligent Agent Architecture
+
+Unlike simple prompt-based tools, Oggy uses a sophisticated agent system:
+
+```
+Planning Phase
+    ↓
+Analysis Strategy Creation
+    ↓  
+Multi-Step Reasoning Process
+    ↓
+Comprehensive Code Analysis
+    ↓
+Production Readiness Assessment
+    ↓
+Detailed Report Generation
+```
+
+### Analysis Capabilities
+
+- Code Quality: Architecture, maintainability, design patterns
+- Security: Vulnerability detection, secure coding practices
+- Performance: Optimization opportunities, scalability issues
+- Production Readiness: Error handling, logging, monitoring
+- Testing: Coverage analysis, E2E testing recommendations
+- Best Practices: Language and framework-specific conventions
+- Breaking Changes: Impact assessment and migration strategies
+
+## Example Output
+
+```
+================================================================================
+COMMIT ANALYSIS REPORT
+================================================================================
+
+Commit Information:
+    Hash:    a1b2c3d4
+    Message: Add user authentication with JWT
+    Author:  John Doe
+    Files:   8 changed
+
+Overall Score:
+    87/100
+
+Status:
+    READY
+
+Summary:
+    Well-structured authentication implementation with good security practices.
+    Minor performance optimizations recommended for production deployment.
+
+Issues Found:
+
+    CRITICAL (0):
+    None found
+
+    HIGH (1):
+        • Security: JWT secret should be configurable via environment
+          Location: src/auth/jwt.ts:15
+          Suggestion: Move JWT_SECRET to environment variables
+
+    MEDIUM (2):
+        • Performance: Synchronous bcrypt usage in authentication
+          Location: src/auth/password.ts:23
+          Suggestion: Use bcrypt.hash() async version
+
+File Analysis:
+    src/auth/jwt.ts        - 1 issue  - Good quality
+    src/auth/password.ts   - 1 issue  - Good quality
+    src/middleware/auth.ts - 0 issues - Excellent quality
+
+Production Readiness:
+    Deployment Ready: Yes
+    Performance Impact: Minor optimizations needed
+    Security Risks: 1 configuration issue
+    Monitoring: Add authentication metrics
+
+Suggestions:
+    1. [HIGH] Security: Implement rate limiting for auth endpoints
+    2. [MEDIUM] Performance: Add caching for user sessions
+    3. [LOW] Documentation: Add API documentation for auth routes
+
+Generated PR Description:
+    # Add JWT-based user authentication
+    
+    ## Changes
+    - Implemented secure JWT authentication
+    - Added password hashing with bcrypt
+    - Created authentication middleware
+    - Added login/logout endpoints
+    
+    ## Security Features
+    - JWT token validation
+    - Secure password hashing
+    - Session management
+    
+    ## Testing
+    - Unit tests for auth service
+    - Integration tests for endpoints
+    - Manual testing completed
+```
+
+## Configuration
+
+Create `oggy.config.yaml` in your project:
+
+```yaml
+analysis:
+  codeQuality: true
+  security: true
+  performance: true
+  productionReadiness: true
+  e2eTests: true
+  minScore: 80
+
+checks:
+  commitMessage: true
+  testsIncluded: true
+  breakingChanges: true
+  typeChecking: true
+  linting: true
+
+agent:
+  verbosity: normal  # quiet | normal | verbose
+  generatePRDescription: true
+  maxSuggestions: 10
+  focusAreas:
+     - security
+     - performance
+     - production-readiness
+
+project:
+  type: web-app
+  languages: [typescript, python]
+  frameworks: [react, fastapi]
+  productionEnvironment: true
+```
+
+## Language & Framework Support
+
+### Languages
+- JavaScript/TypeScript - React, Vue, Angular, Node.js
+- Python - Django, Flask, FastAPI
+- Java - Spring, Hibernate
+- Go - Gin, Echo, Fiber
+- Rust - Actix, Rocket, Warp
+- C/C++ - Performance-critical applications
+- C# - .NET applications
+- PHP - Laravel, Symfony
+- Ruby - Rails applications
+
+### Testing Frameworks
+- Frontend: Jest, Cypress, Playwright, Selenium
+- Backend: PyTest, JUnit, Go testing, Rust tests
+- E2E: Comprehensive end-to-end testing analysis
+
+### Build Tools
+- JavaScript: npm, Webpack, Vite, Rollup
+- Python: pip, Poetry, setuptools
+- Java: Maven, Gradle
+- Go: Go modules
+- Rust: Cargo
+
+## Development
+
+```bash
+# Clone repository
 git clone https://github.com/krishvsoni/oggy.git
 cd oggy
 
 # Install dependencies
 bun install
 
-# Build the executable
-bun run build
-
-# The executable will be created as oggy.exe (Windows) or oggy (Unix)
-```
-
-### Setup
-
-The executable comes with built-in configuration, but you can customize it:
-
-1. Get your Groq API key from [console.groq.com](https://console.groq.com)
-2. Create a `.env` file in your project:
-    ```
-    GROQ_API_KEY=your_api_key_here
-    ```
-3. Initialize Oggy in your project:
-    ```bash
-    oggy init
-    ```
-
-### Usage
-
-```bash
-# Analyze latest commit
-oggy analyze
-
-# Analyze specific commit
-oggy analyze --commit abc123
-
-# Analyze unstaged changes
-oggy analyze --unstaged
-
-# Save report to file
-bun run src/cli.ts analyze --output report.md
-
-# Use different model
-bun run src/cli.ts analyze --model llama-3.1-8b-instant
-```
-
-## How It Works
-
-### Agent Architecture
-
-Unlike simple prompt-based tools, Oggy uses a proper agent architecture:
-
-1. **Planning Phase** - Creates an analysis plan based on commit context
-2. **Thinking Phase** - Reasons through each step with explicit thoughts
-3. **Execution Phase** - Performs deep analysis with accumulated knowledge
-4. **Synthesis Phase** - Generates comprehensive report with PR description
-
-### Analysis Process
-
-```
-Commit Detection
-     ↓
-Metrics Extraction (files, lines, complexity)
-     ↓
-Agent Plans Analysis Strategy
-     ↓
-Agent Thinks Through Each Step
-     ↓
-Deep Code Analysis
-     ├─ Code Quality
-     ├─ Security Issues
-     ├─ Performance
-     ├─ Best Practices
-     ├─ Documentation
-     └─ Testing
-     ↓
-Generate PR Description
-     ↓
-PR Readiness Decision
-```
-
-## Configuration
-
-Edit `oggy.config.yaml` to customize:
-
-```yaml
-analysis:
-  codeQuality: true
-  security: true
-  minScore: 70  # Minimum score for PR approval
-
-checks:
-  commitMessage: true
-  testsIncluded: true
-  breakingChanges: true
-
-agent:
-  verbosity: normal  # quiet | normal | verbose
-  generatePRDescription: true
-  maxSuggestions: 5
-```
-
-## Example Output
-
-```
-COMMIT ANALYSIS REPORT
-================================================================================
-
-Commit Information:
-    Hash:    a1b2c3d4
-    Message: Add user authentication
-    Author:  John Doe
-    Files:   5 changed
-
-Overall Score:
-    85/100
-
-Status:
-    READY
-
-Issues Found:
-    HIGH (1):
-        • Security: Potential SQL injection vulnerability
-          Location: src/db.ts:45
-          Suggestion: Use parameterized queries
-
-Suggestions:
-    1. [HIGH] Testing
-        Add integration tests for authentication flow
-
-PR Readiness:
-    Ready for Pull Request!
-
-Generated PR Description:
-    # Add user authentication with JWT
-    
-    ## Changes
-    - Implemented JWT-based authentication
-    - Added login/logout endpoints
-    - Created user session management
-    
-    ## Testing
-    - Added unit tests for auth service
-    - Manual testing completed
-```
-
-## Development
-
-```bash
-# Install dependencies
-bun install
-
 # Run in development
 bun run dev analyze
 
-# Build for production
-bun run build
+# Build for all platforms
+bun run build:all
 
-# Run built version
-bun run start analyze
+# Build for specific platform
+bun run build:windows  # or build:linux, build:macos
 ```
 
 ## Available Models
 
-- `llama-3.1-70b-versatile` (Default, most capable)
-- `llama-3.1-8b-instant` (Faster, lighter)
-- `mixtral-8x7b-32768` (Good balance)
+| Model | Speed | Quality | Use Case |
+|-------|-------|---------|----------|
+| `llama-3.3-70b-versatile` | Medium | Excellent | Default, best analysis |
+| `llama-3.1-8b-instant` | Fast | Good | Quick checks, CI/CD |
+| `mixtral-8x7b-32768` | Medium | Very Good | Long context analysis |
 
 ## Contributing
 
-This is an open-source project! Contributions are welcome.
+We welcome contributions! See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
 ## License
 
-MIT
+MIT License - see [LICENSE](LICENSE) for details.
 
 ## Credits
 
-- Powered by [Groq](https://groq.com) - Fast LLM inference
+- AI Powered by [Groq](https://groq.com) - Ultra-fast LLM inference
 - Built with [Bun](https://bun.sh) - Fast JavaScript runtime
-- Inspired by CodeRabbit's commit analysis approach
+- Inspired by modern code review practices
 
 ---
 
-Made with love for better code reviews
+Made for better code quality and production readiness
 
-To install dependencies:
-
-```bash
-bun install
-```
-
-To run:
-
-```bash
-bun run index.ts
-```
-
-This project was created using `bun init` in bun v1.2.19. [Bun](https://bun.com) is a fast all-in-one JavaScript runtime.
+[![GitHub Stars](https://img.shields.io/github/stars/krishvsoni/oggy?style=social)](https://github.com/krishvsoni/oggy)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Platform Support](https://img.shields.io/badge/Platform-Windows%20%7C%20macOS%20%7C%20Linux-blue)](https://github.com/krishvsoni/oggy/releases)

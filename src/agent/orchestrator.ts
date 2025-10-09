@@ -21,7 +21,14 @@ export class AgentOrchestrator {
         const spinner = ora('Analyzing commit metrics...').start();
         const metrics = this.codeAnalyzer.analyzeCommit(commit);
         const codeContext = this.codeAnalyzer.extractCodeContext(commit.files);
-        const { languages, frameworks } = this.codeAnalyzer.detectLanguagesAndFrameworks(commit.files);
+        const { languages, frameworks, testingFrameworks, buildTools } = this.codeAnalyzer.detectLanguagesAndFrameworks(commit.files);
+        
+        // Enhanced production readiness analysis
+        let productionAnalysis = null;
+        if (this.config.analysis.productionReadiness) {
+            productionAnalysis = this.codeAnalyzer.analyzeProductionReadiness(commit);
+        }
+        
         spinner.succeed('Commit metrics analyzed');
 
         spinner.start('Agent creating analysis plan...');
@@ -30,9 +37,13 @@ Commit: ${commit.message}
 Files Changed: ${metrics.filesChanged}
 Languages: ${languages.join(', ')}
 Frameworks: ${frameworks.join(', ')}
+Testing Frameworks: ${testingFrameworks.join(', ')}
+Build Tools: ${buildTools.join(', ')}
 Complexity: ${metrics.complexity}
 Has Tests: ${metrics.testFiles.length > 0}
 Breaking Changes: ${metrics.hasBreakingChanges}
+Production Ready: ${productionAnalysis ? `${productionAnalysis.score}/100` : 'Not analyzed'}
+Focus Areas: ${this.config.agent.focusAreas?.join(', ') || 'General'}
         `.trim();
 
         let plan: AgentPlan;
@@ -96,9 +107,10 @@ Breaking Changes: ${metrics.hasBreakingChanges}
             const analysisJson = await this.groqAgent.analyzeCode(
                 commit.message,
                 codeContext,
-                metrics,
+                { ...metrics, languages, frameworks, testingFrameworks, buildTools },
                 plan,
-                thoughts
+                thoughts,
+                productionAnalysis
             );
             
             analysisResult = JSON.parse(analysisJson);

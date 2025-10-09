@@ -166,4 +166,66 @@ export class CommitAnalyzer {
       return { isRepo: false, hasRemote: false, defaultBranch: '' };
     }
   }
+
+  async getCodebaseAnalysis(): Promise<CommitInfo> {
+    const fs = require('fs');
+    const path = require('path');
+    
+    // Get all files in the repository (excluding gitignored ones)
+    const status = await this.git.status();
+    const allFiles = await this.getAllTrackedFiles();
+    
+    const files: FileChange[] = [];
+    
+    for (const filePath of allFiles) {
+      if (this.shouldAnalyzeFile(filePath)) {
+        const stats = fs.statSync(filePath);
+        const content = fs.readFileSync(filePath, 'utf-8');
+        const lines = content.split('\n').length;
+        
+        files.push({
+          path: filePath,
+          status: 'modified',
+          additions: lines,
+          deletions: 0,
+          diff: content.substring(0, 5000) // Limit content for analysis
+        });
+      }
+    }
+
+    return {
+      hash: 'codebase-analysis',
+      message: 'Whole codebase analysis',
+      author: 'system',
+      date: new Date().toISOString(),
+      files
+    };
+  }
+
+  private async getAllTrackedFiles(): Promise<string[]> {
+    try {
+      const files = await this.git.raw(['ls-files']);
+      return files.split('\n').filter(f => f.trim() !== '');
+    } catch (error) {
+      return [];
+    }
+  }
+
+  private shouldAnalyzeFile(filePath: string): boolean {
+    const ignoredExtensions = ['.log', '.lock', '.tmp', '.cache'];
+    const ignoredDirs = ['node_modules', 'dist', 'build', '.git', '.next', 'coverage'];
+    
+    // Skip binary files and common ignore patterns
+    if (ignoredExtensions.some(ext => filePath.endsWith(ext))) {
+      return false;
+    }
+    
+    if (ignoredDirs.some(dir => filePath.includes(dir + '/'))) {
+      return false;
+    }
+    
+    // Only analyze code files
+    const codeExtensions = ['.ts', '.tsx', '.js', '.jsx', '.py', '.java', '.go', '.rs', '.cpp', '.c', '.h', '.cs', '.php', '.rb'];
+    return codeExtensions.some(ext => filePath.endsWith(ext));
+  }
 }

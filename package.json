@@ -1,7 +1,7 @@
 {
   "name": "oggy",
-  "version": "0.1.0",
-  "description": "AI-powered CLI agent for commit analysis and PR readiness",
+  "version": "1.0.0",
+  "description": "AI-powered CLI agent for comprehensive code analysis, commit review, and production readiness assessment",
   "module": "index.ts",
   "type": "module",
   "bin": {
@@ -9,10 +9,14 @@
   },
   "scripts": {
     "build": "bun build src/cli.ts --compile --outfile oggy.exe",
-    "build:all": "bun build src/cli.ts --compile --target bun-windows-x64 --outfile oggy.exe && bun build src/cli.ts --compile --target bun-linux-x64 --outfile oggy && bun build src/cli.ts --compile --target bun-darwin-x64 --outfile oggy-mac",
+    "build:all": "bun build src/cli.ts --compile --target bun-windows-x64 --outfile oggy.exe && bun build src/cli.ts --compile --target bun-linux-x64 --outfile oggy-linux && bun build src/cli.ts --compile --target bun-linux-arm64 --outfile oggy-linux-arm64 && bun build src/cli.ts --compile --target bun-darwin-x64 --outfile oggy-macos && bun build src/cli.ts --compile --target bun-darwin-arm64 --outfile oggy-macos-arm64",
+    "build:windows": "bun build src/cli.ts --compile --target bun-windows-x64 --outfile oggy.exe",
+    "build:linux": "bun build src/cli.ts --compile --target bun-linux-x64 --outfile oggy-linux && bun build src/cli.ts --compile --target bun-linux-arm64 --outfile oggy-linux-arm64",
+    "build:macos": "bun build src/cli.ts --compile --target bun-darwin-x64 --outfile oggy-macos && bun build src/cli.ts --compile --target bun-darwin-arm64 --outfile oggy-macos-arm64",
     "dev": "bun run src/cli.ts",
     "start": "node dist/cli.js",
     "setup-hooks": "node scripts/setup-hooks.js",
+    "test": "bun test",
     "postinstall": "echo '💡 Run: bun run setup-hooks to enable automatic commit analysis'"
   },
   "dependencies": {

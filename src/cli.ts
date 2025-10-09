@@ -71,16 +71,20 @@ const program = new Command();
 program
   .name('oggy')
   .description('AI-powered CLI agent for commit analysis and PR readiness')
-  .version('0.1.0');
+  .version('1.0.0');
 
 program
   .command('analyze')
-  .description('Analyze the latest commit or unstaged changes')
+  .description('Analyze the latest commit, unstaged changes, or entire codebase')
   .option('-c, --commit <hash>', 'Analyze specific commit by hash')
   .option('-u, --unstaged', 'Analyze unstaged changes instead of last commit')
+  .option('-w, --whole-codebase', 'Analyze entire codebase for production readiness')
+  .option('--git-url <url>', 'Clone and analyze remote repository')
   .option('--config <path>', 'Path to config file')
   .option('-o, --output <file>', 'Save report to file')
-  .option('-m, --model <model>', 'Groq model to use (default: llama-3.1-70b-versatile)')
+  .option('-m, --model <model>', 'Groq model to use (default: llama-3.3-70b-versatile)')
+  .option('--production', 'Enable production-level compatibility checks')
+  .option('--e2e-tests', 'Include end-to-end testing analysis')
   .action(async (options) => {
     try {
       const apiKey = process.env.GROQ_API_KEY;
@@ -116,7 +120,32 @@ program
       let commit;
       const spinner = ora('Fetching commit information...').start();
       try {
-        if (options.unstaged) {
+        if (options.gitUrl) {
+          spinner.text = 'Cloning repository...';
+          const tempDir = path.join(process.cwd(), '.oggy-temp-repo');
+          const { execSync } = require('child_process');
+          
+          try {
+            execSync(`git clone ${options.gitUrl} ${tempDir}`, { stdio: 'pipe' });
+            const tempCommitAnalyzer = new CommitAnalyzer(tempDir);
+            spinner.text = 'Analyzing cloned repository...';
+            commit = await tempCommitAnalyzer.getLatestCommit();
+            
+            // Clean up temp directory after analysis
+            process.on('exit', () => {
+              try {
+                fs.rmSync(tempDir, { recursive: true, force: true });
+              } catch (e) {}
+            });
+          } catch (error: any) {
+            spinner.fail('Failed to clone repository');
+            console.error(chalk.red(`Error: ${error.message}`));
+            process.exit(1);
+          }
+        } else if (options.wholeCodebase) {
+          spinner.text = 'Analyzing entire codebase...';
+          commit = await commitAnalyzer.getCodebaseAnalysis();
+        } else if (options.unstaged) {
           spinner.text = 'Analyzing unstaged changes...';
           commit = await commitAnalyzer.getUnstagedChanges();
         } else if (options.commit) {
@@ -214,34 +243,302 @@ program
 
 program
   .command('init')
-  .description('Initialize Oggy configuration in current repository')
-  .action(() => {
+  .description('Initialize Oggy configuration in current repository with enhanced setup')
+  .option('--production', 'Initialize with production-ready configuration')
+  .option('--language <lang>', 'Specify primary language for better defaults')
+  .option('--framework <framework>', 'Specify framework for optimized configuration')
+  .action((options) => {
     const fs = require('fs');
     const path = require('path');
     const configPath = path.join(process.cwd(), 'oggy.config.yaml');
     const envPath = path.join(process.cwd(), '.env');
+    
+    // Detect project type and language
+    const projectInfo = detectProjectInfo();
+    const language = options.language || projectInfo.language;
+    const framework = options.framework || projectInfo.framework;
+    
+    console.log(chalk.cyan('\nOggy Initialization\n'));
+    console.log(chalk.gray(`Detected language: ${language || 'auto'}`));
+    console.log(chalk.gray(`Detected framework: ${framework || 'auto'}`));
+    
     if (fs.existsSync(configPath)) {
       console.log(chalk.yellow('oggy.config.yaml already exists'));
     } else {
-      const defaultConfig = fs.readFileSync(
-        path.join(__dirname, '../oggy.config.yaml'),
-        'utf-8'
-      );
-      fs.writeFileSync(configPath, defaultConfig);
-      console.log(chalk.green('Created oggy.config.yaml'));
+      // Create enhanced config based on detected project type
+      const config = generateEnhancedConfig(language, framework, options.production);
+      fs.writeFileSync(configPath, config);
+      console.log(chalk.green('Created enhanced oggy.config.yaml'));
     }
+    
     if (!fs.existsSync(envPath)) {
-      fs.writeFileSync(envPath, 'GROQ_API_KEY=your_api_key_here\n');
-      console.log(chalk.green('Created .env file'));
-      console.log(chalk.yellow('\nPlease add your Groq API key to .env'));
+      const envContent = `# Groq API Configuration
+GROQ_API_KEY=your_api_key_here
+GROQ_MODEL=llama-3.3-70b-versatile
+
+# Analysis Configuration
+OGGY_PRODUCTION_MODE=${options.production ? 'true' : 'false'}
+OGGY_E2E_TESTS=${language === 'javascript' || language === 'typescript' ? 'true' : 'false'}
+`;
+      fs.writeFileSync(envPath, envContent);
+      console.log(chalk.green('Created .env file with enhanced configuration'));
     }
-    console.log(chalk.cyan('\nOggy initialized successfully!'));
-    console.log(chalk.gray('\nNext steps:'));
+    
+    // Create project-specific ignore file
+    const gitignorePath = path.join(process.cwd(), '.oggyignore');
+    if (!fs.existsSync(gitignorePath)) {
+      const ignoreContent = generateIgnoreFile(language, framework);
+      fs.writeFileSync(gitignorePath, ignoreContent);
+      console.log(chalk.green('Created .oggyignore file'));
+    }
+    
+    console.log(chalk.cyan('\nOggy initialized successfully!\n'));
+    console.log(chalk.gray('Next steps:'));
     console.log(chalk.gray('1. Get your API key from https://console.groq.com'));
     console.log(chalk.gray('2. Add it to .env: GROQ_API_KEY=your_key'));
     console.log(chalk.gray('3. Customize oggy.config.yaml to your needs'));
-    console.log(chalk.gray('4. Run: oggy analyze\n'));
+    console.log(chalk.gray('4. Run: oggy analyze --whole-codebase (for full analysis)'));
+    console.log(chalk.gray('5. Run: oggy analyze (for commit analysis)'));
+    
+    if (options.production) {
+      console.log(chalk.yellow('\nProduction mode enabled:'));
+      console.log(chalk.gray('- Enhanced security checks'));
+      console.log(chalk.gray('- Performance optimization analysis'));
+      console.log(chalk.gray('- Production deployment readiness'));
+    }
+    
+    console.log();
   });
+
+function detectProjectInfo(): { language: string | null; framework: string | null } {
+  const fs = require('fs');
+  const path = require('path');
+  
+  let language = null;
+  let framework = null;
+  
+  // Check package.json for Node.js projects
+  const packageJsonPath = path.join(process.cwd(), 'package.json');
+  if (fs.existsSync(packageJsonPath)) {
+    try {
+      const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
+      const deps = { ...packageJson.dependencies, ...packageJson.devDependencies };
+      
+      if (deps.typescript || deps['@types/node']) {
+        language = 'typescript';
+      } else {
+        language = 'javascript';
+      }
+      
+      if (deps.react || deps['@types/react']) framework = 'react';
+      else if (deps.vue) framework = 'vue';
+      else if (deps.angular || deps['@angular/core']) framework = 'angular';
+      else if (deps.next || deps['next']) framework = 'nextjs';
+      else if (deps.express) framework = 'express';
+      else if (deps.nestjs || deps['@nestjs/core']) framework = 'nestjs';
+    } catch (e) {
+      // Ignore parsing errors
+    }
+  }
+  
+  // Check for Python
+  if (fs.existsSync('requirements.txt') || fs.existsSync('pyproject.toml') || fs.existsSync('setup.py')) {
+    language = 'python';
+    if (fs.existsSync('manage.py')) framework = 'django';
+    else if (fs.readFileSync('requirements.txt', 'utf8').includes('flask')) framework = 'flask';
+  }
+  
+  // Check for Java
+  if (fs.existsSync('pom.xml') || fs.existsSync('build.gradle')) {
+    language = 'java';
+    if (fs.readFileSync('pom.xml', 'utf8').includes('spring')) framework = 'spring';
+  }
+  
+  // Check for Go
+  if (fs.existsSync('go.mod')) {
+    language = 'go';
+  }
+  
+  // Check for Rust
+  if (fs.existsSync('Cargo.toml')) {
+    language = 'rust';
+  }
+  
+  return { language, framework };
+}
+
+function generateEnhancedConfig(language: string | null, framework: string | null, production: boolean): string {
+  const baseConfig = {
+    analysis: {
+      codeQuality: true,
+      security: true,
+      performance: true,
+      bestPractices: true,
+      documentation: true,
+      productionReadiness: production,
+      e2eTests: ['javascript', 'typescript'].includes(language || ''),
+      minScore: production ? 85 : 70,
+      ignore: [
+        'node_modules/**',
+        'dist/**',
+        'build/**',
+        '*.log',
+        '*.lock',
+        '.git/**',
+        'coverage/**',
+        '.next/**',
+        '.nuxt/**',
+        'target/**',  // Rust/Java
+        '__pycache__/**',  // Python
+        '*.pyc',  // Python
+        'vendor/**',  // Go/PHP
+      ]
+    },
+    checks: {
+      commitMessage: true,
+      testsIncluded: true,
+      breakingChanges: true,
+      complexity: true,
+      securityIssues: true,
+      typeChecking: ['typescript', 'python'].includes(language || ''),
+      linting: true,
+      formatting: true
+    },
+    agent: {
+      verbosity: 'normal',
+      generatePRDescription: true,
+      suggestImprovements: true,
+      maxSuggestions: production ? 10 : 5,
+      focusAreas: generateFocusAreas(language, framework, production)
+    },
+    project: {
+      type: framework || language || 'auto',
+      languages: language || 'auto',
+      frameworks: framework || 'auto',
+      productionEnvironment: production
+    }
+  };
+  
+  return require('js-yaml').dump(baseConfig, { indent: 2 });
+}
+
+function generateFocusAreas(language: string | null, framework: string | null, production: boolean): string[] {
+  const areas = ['code-quality', 'security'];
+  
+  if (production) {
+    areas.push('performance', 'scalability', 'error-handling', 'monitoring');
+  }
+  
+  if (language === 'javascript' || language === 'typescript') {
+    areas.push('async-patterns', 'memory-leaks');
+    if (framework === 'react') areas.push('react-best-practices', 'component-design');
+    if (framework === 'nextjs') areas.push('ssr-optimization', 'seo');
+  }
+  
+  if (language === 'python') {
+    areas.push('pythonic-code', 'packaging');
+    if (framework === 'django') areas.push('django-security', 'orm-optimization');
+  }
+  
+  if (language === 'java') {
+    areas.push('memory-management', 'concurrency');
+    if (framework === 'spring') areas.push('spring-security', 'bean-management');
+  }
+  
+  return areas;
+}
+
+function generateIgnoreFile(language: string | null, framework: string | null): string {
+  let content = `# Oggy Analysis Ignore Patterns
+# Add patterns for files/directories to exclude from analysis
+
+# Common build artifacts
+node_modules/
+dist/
+build/
+target/
+*.log
+*.lock
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Coverage reports
+coverage/
+*.coverage
+.nyc_output/
+
+`;
+
+  if (language === 'javascript' || language === 'typescript') {
+    content += `# Node.js specific
+.next/
+.nuxt/
+.output/
+.vercel/
+.netlify/
+
+`;
+  }
+
+  if (language === 'python') {
+    content += `# Python specific
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+pip-log.txt
+pip-delete-this-directory.txt
+.env
+.venv/
+env/
+venv/
+
+`;
+  }
+
+  if (language === 'java') {
+    content += `# Java specific
+*.class
+*.jar
+*.war
+*.ear
+.mvn/
+target/
+
+`;
+  }
+
+  if (language === 'go') {
+    content += `# Go specific
+vendor/
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+`;
+  }
+
+  if (language === 'rust') {
+    content += `# Rust specific
+target/
+Cargo.lock
+
+`;
+  }
+
+  return content;
+}
 
 program
   .command('config')

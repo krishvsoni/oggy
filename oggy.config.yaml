@@ -1,48 +1,70 @@
-# Oggy CLI Configuration
-# This file defines how the agent should analyze your commits
+# Oggy CLI Enhanced Configuration
+# This file defines how the agent should analyze your commits and codebase
 
 analysis:
-  # Enable/disable different analyzers
+  # Core analysis features
   codeQuality: true
   security: true
   performance: true
   bestPractices: true
   documentation: true
   
-  minScore: 70
+  # Advanced analysis features
+  productionReadiness: true
+  e2eTests: true
   
+  # Scoring and thresholds
+  minScore: 80
+  
+  # Files and patterns to ignore
   ignore:
     - node_modules/**
     - dist/**
     - build/**
+    - target/**
+    - __pycache__/**
+    - .next/**
+    - .nuxt/**
+    - coverage/**
     - "*.log"
     - "*.lock"
     - ".git/**"
 
 checks:
+  # Commit-related checks
   commitMessage: true
-  
-  testsIncluded: true
-  
   breakingChanges: true
   
-  complexity: true
+  # Code quality checks
+  testsIncluded: true
+  typeChecking: true
+  linting: true
+  formatting: true
   
+  # Advanced checks
+  complexity: true
   securityIssues: true
 
 agent:
-  verbosity: normal 
-  
+  # Agent behavior
+  verbosity: normal  # quiet | normal | verbose
   generatePRDescription: true
-  
   suggestImprovements: true
+  maxSuggestions: 10
   
-  maxSuggestions: 5
+  # Analysis focus areas
+  focusAreas:
+    - code-quality
+    - security
+    - performance
+    - production-readiness
+    - testing
 
 project:
-
-  type: auto
+  # Project configuration (auto-detected if not specified)
+  type: auto  # web-app | library | api | cli | mobile
+  languages: auto  # typescript | javascript | python | java | go | rust
+  frameworks: auto  # react | vue | angular | django | spring | express
   
-  languages: auto
-  
-  frameworks: auto
+  # Environment settings
+  productionEnvironment: true

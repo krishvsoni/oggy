@@ -92,13 +92,22 @@ Respond in JSON format:
         codeContext: string,
         analysisMetrics: any,
         plan: AgentPlan,
-        thoughts: AgentThought[]
+        thoughts: AgentThought[],
+        productionAnalysis?: any
     ): Promise<string> {
         const thoughtsContext = thoughts.map(t => 
             `Step ${t.step} - ${t.action}: ${t.reasoning}`
         ).join('\n');
 
-        const prompt = `You are an expert code review agent. Analyze this commit thoroughly.
+        const productionContext = productionAnalysis ? `
+Production Readiness Analysis:
+- Score: ${productionAnalysis.score}/100
+- Critical Issues: ${productionAnalysis.issues.filter((i: any) => i.severity === 'critical').length}
+- High Priority Issues: ${productionAnalysis.issues.filter((i: any) => i.severity === 'high').length}
+- Recommendations: ${productionAnalysis.recommendations.slice(0, 3).join(', ')}
+        ` : '';
+
+        const prompt = `You are an expert code review agent with deep knowledge of production systems, security, and software engineering best practices. Analyze this commit thoroughly for enterprise-grade quality.
 
 Commit Message: ${commitMessage}
 
@@ -110,6 +119,11 @@ Analysis Metrics:
 - Test Files: ${analysisMetrics.testFiles.length}
 - Code Files: ${analysisMetrics.codeFiles.length}
 - Has Breaking Changes: ${analysisMetrics.hasBreakingChanges}
+- Languages: ${analysisMetrics.languages?.join(', ') || 'Unknown'}
+- Frameworks: ${analysisMetrics.frameworks?.join(', ') || 'Unknown'}
+- Testing Frameworks: ${analysisMetrics.testingFrameworks?.join(', ') || 'None'}
+
+${productionContext}
 
 Agent's Analysis Plan:
 ${plan.goal}
@@ -118,47 +132,75 @@ Agent's Thoughts:
 ${thoughtsContext}
 
 Code Changes:
-${codeContext.substring(0, 15000)} ${codeContext.length > 15000 ? '...(truncated)' : ''}
+${codeContext.substring(0, 20000)} ${codeContext.length > 20000 ? '...(truncated for length)' : ''}
 
-Based on your plan and thoughts, provide a comprehensive analysis covering:
-1. Code Quality (structure, readability, maintainability)
-2. Security Issues (vulnerabilities, unsafe patterns)
-3. Performance Concerns (inefficiencies, bottlenecks)
-4. Best Practices (adherence to standards, patterns)
-5. Documentation (comments, clarity)
-6. Testing (test coverage, quality)
-7. Breaking Changes (impact, migration)
-8. Overall PR Readiness
+Provide a comprehensive analysis focusing on:
+1. **Code Quality** - Architecture, maintainability, readability, design patterns
+2. **Security** - Vulnerabilities, data protection, authentication, authorization
+3. **Performance** - Scalability, efficiency, memory usage, async patterns
+4. **Production Readiness** - Error handling, logging, monitoring, configuration
+5. **Testing** - Coverage, quality, E2E scenarios, edge cases
+6. **Best Practices** - Language-specific conventions, framework patterns
+7. **Documentation** - Code comments, API docs, deployment guides
+8. **Breaking Changes** - Impact assessment, migration strategies
+9. **File-Specific Issues** - Identify problematic files with line numbers when possible
+10. **End-to-End Considerations** - Integration points, external dependencies
+
+For each file analyzed, provide specific feedback including:
+- File path and primary concerns
+- Line-specific issues when identifiable
+- Severity assessment (critical/high/medium/low)
+- Actionable suggestions for improvement
+
+Consider the detected languages and frameworks for context-specific analysis.
 
 Respond in JSON format:
 {
     "score": 0-100,
     "status": "ready|needs-work|not-ready",
-    "summary": "brief overall summary",
+    "summary": "comprehensive summary focusing on production readiness",
     "issues": [
         {
             "severity": "critical|high|medium|low",
-            "category": "category name",
-            "message": "issue description",
-            "file": "optional file path",
-            "line": optional line number,
-            "suggestion": "optional fix suggestion"
+            "category": "category name (Security, Performance, Code Quality, etc.)",
+            "message": "detailed issue description",
+            "file": "specific file path when applicable",
+            "line": optional line number when identifiable,
+            "suggestion": "specific actionable fix",
+            "impact": "description of potential impact if not addressed"
         }
     ],
     "suggestions": [
         {
             "category": "category name",
-            "message": "suggestion text",
-            "priority": "high|medium|low"
+            "message": "detailed improvement suggestion",
+            "priority": "high|medium|low",
+            "effort": "low|medium|high",
+            "files": ["list of affected files if applicable"]
         }
     ],
-    "prDescription": "auto-generated PR description in markdown format"
+    "fileAnalysis": [
+        {
+            "file": "file path",
+            "issues": number of issues,
+            "quality": "excellent|good|fair|poor",
+            "mainConcerns": ["list of primary concerns for this file"]
+        }
+    ],
+    "productionReadiness": {
+        "deploymentReady": boolean,
+        "criticalBlockers": ["list of issues that must be fixed before deployment"],
+        "performanceImpact": "assessment of performance implications",
+        "securityRisks": ["list of security concerns"],
+        "monitoringNeeds": ["recommended monitoring/logging improvements"]
+    },
+    "prDescription": "auto-generated PR description in markdown format with focus on production impact"
 }`;
 
         const response = await this.client.chat.completions.create({
             messages: [{ role: 'user', content: prompt }],
             model: this.model,
-            temperature: 0.4,
+            temperature: 0.3,
             response_format: { type: 'json_object' }
         });
 
