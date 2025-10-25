@@ -73,15 +73,14 @@ const displayAsciiImage = async (): Promise<void> => {
     if (fs.existsSync(imagePath)) {
       const options = {
         fit: 'box',
-        width: 50,
-        height: 25,
+        width: 25,
+        height: 15,
         c_ratio: 2,
       };
       const asciifiedImage = await asciifyImage(imagePath, options);
       console.log(asciifiedImage);
     }
   } catch (err) {
-    // Silently fail if image conversion doesn't work
   }
 };
 
