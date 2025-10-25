@@ -10,6 +10,7 @@ import { ReportGenerator } from './analyzers/report';
 import ora from 'ora';
 import path from 'path';
 import fs from 'fs';
+import asciifyImage from 'asciify-image';
 
 const findOggyInstallDir = (): string | null => {
   try {
@@ -66,6 +67,24 @@ const loadEnvFiles = () => {
 
 const envInfo = loadEnvFiles();
 
+const displayAsciiImage = async (): Promise<void> => {
+  try {
+    const imagePath = path.join(process.cwd(), 'images.png');
+    if (fs.existsSync(imagePath)) {
+      const options = {
+        fit: 'box',
+        width: 50,
+        height: 25,
+        c_ratio: 2,
+      };
+      const asciifiedImage = await asciifyImage(imagePath, options);
+      console.log(asciifiedImage);
+    }
+  } catch (err) {
+    // Silently fail if image conversion doesn't work
+  }
+};
+
 const program = new Command();
 
 program
@@ -117,6 +136,9 @@ program
         process.exit(1);
       }
       console.log(chalk.bold.cyan('\nOggy - AI Commit Analyzer\n'));
+      await displayAsciiImage();
+      console.log();
+      
       let commit;
       const spinner = ora('Fetching commit information...').start();
       try {

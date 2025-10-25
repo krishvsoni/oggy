@@ -300,9 +300,7 @@ bun run build:windows  # or build:linux, build:macos
 | `llama-3.1-8b-instant` | Fast | Good | Quick checks, CI/CD |
 | `mixtral-8x7b-32768` | Medium | Very Good | Long context analysis |
 
-## Contributing
 
-We welcome contributions! See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
 ## License
 

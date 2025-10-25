@@ -35,10 +35,10 @@ export class AgentOrchestrator {
         const contextSummary = `
 Commit: ${commit.message}
 Files Changed: ${metrics.filesChanged}
-Languages: ${languages.join(', ')}
-Frameworks: ${frameworks.join(', ')}
-Testing Frameworks: ${testingFrameworks.join(', ')}
-Build Tools: ${buildTools.join(', ')}
+Languages: ${languages.length} detected
+Frameworks: ${frameworks.length} detected
+Testing Frameworks: ${testingFrameworks.length > 0 ? 'Yes' : 'No'}
+Build Tools: ${buildTools.length > 0 ? 'Yes' : 'No'}
 Complexity: ${metrics.complexity}
 Has Tests: ${metrics.testFiles.length > 0}
 Breaking Changes: ${metrics.hasBreakingChanges}
@@ -89,10 +89,8 @@ Focus Areas: ${this.config.agent.focusAreas?.join(', ') || 'General'}
                 thoughts.push(thought);
                 stepSpinner.succeed();
 
-                if (verbosity === 'verbose') {
+                if (verbosity !== 'quiet') {
                     console.log(chalk.gray(`   ${thought.thought}`));
-                    console.log(chalk.gray(`   Action: ${thought.action}`));
-                    console.log(chalk.gray(`   Reasoning: ${thought.reasoning}\n`));
                 }
             } catch (error) {
                 stepSpinner.fail();
