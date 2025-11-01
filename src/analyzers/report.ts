@@ -44,7 +44,7 @@ export class ReportGenerator {
             const scoreColor = result.issueRelevance.score >= 70 ? chalk.green :
                              result.issueRelevance.score >= 50 ? chalk.yellow : chalk.red;
             
-            console.log(`   Status: ${relevanceColor(result.issueRelevance.isRelevant ? 'RELEVANT ✓' : 'NOT RELEVANT ✗')}`);
+            console.log(`   Status: ${relevanceColor(result.issueRelevance.isRelevant ? '[RELEVANT]' : '[NOT RELEVANT]')}`);
             console.log(`   Score:  ${scoreColor(result.issueRelevance.score + '/100')}`);
             console.log(`   ${chalk.gray(result.issueRelevance.explanation)}`);
             
@@ -161,7 +161,7 @@ export class ReportGenerator {
         
         if (result.issueRelevance) {
             md += `### Issue Relevance\n\n`;
-            md += `- **Relevant:** ${result.issueRelevance.isRelevant ? '✓ Yes' : '✗ No'}\n`;
+            md += `- **Relevant:** ${result.issueRelevance.isRelevant ? '[Yes]' : '[No]'}\n`;
             md += `- **Relevance Score:** ${result.issueRelevance.score}/100\n`;
             md += `- **Explanation:** ${result.issueRelevance.explanation}\n\n`;
             

@@ -28,7 +28,8 @@ export class AgentOrchestrator {
             productionAnalysis = this.codeAnalyzer.analyzeProductionReadiness(commit);
         }
         
-        spinner.succeed('Commit metrics analyzed');
+        spinner.stop();
+        console.log(chalk.green('[COMPLETE] Commit metrics analyzed'));
 
         spinner.start('Agent creating analysis plan...');
         const contextSummary = `
@@ -52,7 +53,8 @@ ${commit.issueNumber ? `\nLinked Issue #${commit.issueNumber}: ${commit.issueTit
                 'Analyze this commit for PR readiness and code quality',
                 contextSummary
             );
-            spinner.succeed('Analysis plan created');
+            spinner.stop();
+            console.log(chalk.green('[COMPLETE] Analysis plan created'));
 
             if (verbosity !== 'quiet') {
                 console.log(chalk.cyan('\nAgent Plan:'));
@@ -66,7 +68,8 @@ ${commit.issueNumber ? `\nLinked Issue #${commit.issueNumber}: ${commit.issueTit
                 }
             }
         } catch (error) {
-            spinner.fail('Failed to create plan');
+            spinner.stop();
+            console.log(chalk.red('[ERROR] Failed to create plan'));
             throw error;
         }
 
@@ -87,14 +90,15 @@ ${commit.issueNumber ? `\nLinked Issue #${commit.issueNumber}: ${commit.issueTit
                     thoughts
                 );
                 thoughts.push(thought);
-                stepSpinner.succeed();
+                stepSpinner.stop();
+                console.log(chalk.green(`[COMPLETE] Step ${i + 1}/${plan.steps.length}`));
 
                 if (verbosity !== 'quiet') {
                     console.log(chalk.gray(`   ${thought.thought}`));
                 }
             } catch (error) {
-                stepSpinner.fail();
-                console.warn(chalk.yellow(`   Step ${i + 1} failed, continuing...`));
+                stepSpinner.stop();
+                console.log(chalk.yellow(`[WARNING] Step ${i + 1} failed, continuing...`));
             }
         }
 
@@ -112,9 +116,11 @@ ${commit.issueNumber ? `\nLinked Issue #${commit.issueNumber}: ${commit.issueTit
             );
             
             analysisResult = JSON.parse(analysisJson);
-            spinner.succeed('Deep analysis completed');
+            spinner.stop();
+            console.log(chalk.green('[COMPLETE] Deep analysis completed'));
         } catch (error) {
-            spinner.fail('Analysis failed');
+            spinner.stop();
+            console.log(chalk.red('[ERROR] Analysis failed'));
             throw error;
         }
 
@@ -126,9 +132,11 @@ ${commit.issueNumber ? `\nLinked Issue #${commit.issueNumber}: ${commit.issueTit
                     analysisResult.summary
                 );
                 analysisResult.prDescription = `# ${prTitle}\n\n${analysisResult.prDescription}`;
-                spinner.succeed('PR title generated');
+                spinner.stop();
+                console.log(chalk.green('[COMPLETE] PR title generated'));
             } catch (error) {
-                spinner.warn('PR title generation failed');
+                spinner.stop();
+                console.log(chalk.yellow('[WARNING] PR title generation failed'));
             }
         }
 
@@ -147,9 +155,11 @@ ${commit.issueNumber ? `\nLinked Issue #${commit.issueNumber}: ${commit.issueTit
             try {
                 const issueRelevance = await this.analyzeIssueRelevance(commit, codeContext);
                 analysisResult.issueRelevance = issueRelevance;
-                spinner.succeed('Issue relevance analyzed');
+                spinner.stop();
+                console.log(chalk.green('[COMPLETE] Issue relevance analyzed'));
             } catch (error) {
-                spinner.warn('Issue relevance check failed');
+                spinner.stop();
+                console.log(chalk.yellow('[WARNING] Issue relevance check failed'));
             }
         }
 
