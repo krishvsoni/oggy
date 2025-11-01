@@ -88,8 +88,17 @@ oggy analyze --production
 # With end-to-end testing analysis
 oggy analyze --e2e-tests
 
-# Analyze remote repository
+# Analyze remote repository (public)
 oggy analyze --git-url https://github.com/user/repo.git
+
+# Analyze specific branch from remote repository
+oggy analyze --git-url https://github.com/user/repo.git --branch develop
+
+# Analyze remote repository and keep clone for inspection
+oggy analyze --git-url https://github.com/user/repo.git --keep-clone
+
+# Analyze private repository (use SSH URL with proper credentials)
+oggy analyze --git-url git@github.com:user/private-repo.git
 
 # Save detailed report
 oggy analyze --output report.md
@@ -271,6 +280,72 @@ project:
 - Java: Maven, Gradle
 - Go: Go modules
 - Rust: Cargo
+
+## Remote Repository Analysis
+
+Oggy can analyze remote Git repositories without cloning them to your local workspace. This is useful for:
+- Reviewing pull requests from forks
+- Analyzing third-party repositories
+- Quick security audits
+- CI/CD integration
+
+### Usage Examples
+
+```bash
+# Analyze public repository
+oggy analyze --git-url https://github.com/username/repo.git
+
+# Analyze specific branch
+oggy analyze --git-url https://github.com/username/repo.git --branch develop
+
+# Analyze and keep clone for debugging
+oggy analyze --git-url https://github.com/username/repo.git --keep-clone
+
+# Analyze private repository (SSH)
+oggy analyze --git-url git@github.com:username/private-repo.git
+```
+
+### Features
+
+- **Fast Cloning**: Uses `--depth 1` for shallow clones (downloads only latest commit)
+- **Automatic Cleanup**: Temporary directories are cleaned up after analysis
+- **Branch Support**: Analyze any branch with `--branch` option
+- **Error Handling**: Clear error messages for common issues
+- **Cross-Platform**: Works on Windows, macOS, and Linux
+
+### Troubleshooting
+
+**Issue: "Repository not found"**
+- Verify the repository URL is correct
+- Check if the repository is public or you have access
+- For private repos, use SSH URL and ensure SSH keys are configured
+
+**Issue: "Authentication failed"**
+- For private repositories, use SSH URL: `git@github.com:user/repo.git`
+- Ensure your SSH keys are set up: `ssh -T git@github.com`
+- For HTTPS with private repos, you may need to configure Git credentials
+
+**Issue: "Network error"**
+- Check your internet connection
+- Verify you can access GitHub/GitLab: `ping github.com`
+- Check if proxy settings are blocking Git
+
+**Issue: "Could not resolve host"**
+- Check DNS settings
+- Try using a different network
+- Verify the Git URL is properly formatted
+
+**Issue: "Clone is slow"**
+- This is normal for large repositories
+- The `--depth 1` option limits the clone to just the latest commit
+- Consider using `--branch` to clone a specific branch if the default branch is large
+
+### Tips
+
+1. **For Quick Analysis**: The default shallow clone (`--depth 1`) is fast and sufficient for most analyses
+2. **For Debugging**: Use `--keep-clone` to inspect the cloned repository after analysis
+3. **For Private Repos**: SSH URLs work best; ensure your SSH keys are configured
+4. **Temporary Storage**: Clones are stored in system temp directory and auto-cleaned
 
 ## Development
 

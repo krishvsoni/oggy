@@ -23,7 +23,6 @@ export class AgentOrchestrator {
         const codeContext = this.codeAnalyzer.extractCodeContext(commit.files);
         const { languages, frameworks, testingFrameworks, buildTools } = this.codeAnalyzer.detectLanguagesAndFrameworks(commit.files);
         
-        // Enhanced production readiness analysis
         let productionAnalysis = null;
         if (this.config.analysis.productionReadiness) {
             productionAnalysis = this.codeAnalyzer.analyzeProductionReadiness(commit);

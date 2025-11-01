@@ -98,6 +98,8 @@ program
   .option('-u, --unstaged', 'Analyze unstaged changes instead of last commit')
   .option('-w, --whole-codebase', 'Analyze entire codebase for production readiness')
   .option('--git-url <url>', 'Clone and analyze remote repository')
+  .option('--branch <name>', 'Branch to analyze from remote repository (used with --git-url)')
+  .option('--keep-clone', 'Keep cloned repository for inspection (used with --git-url)')
   .option('--config <path>', 'Path to config file')
   .option('-o, --output <file>', 'Save report to file')
   .option('-m, --model <model>', 'Groq model to use (default: llama-3.3-70b-versatile)')
@@ -140,46 +142,112 @@ program
       
       let commit;
       const spinner = ora('Fetching commit information...').start();
+      let tempDir: string | null = null;
+      
       try {
         if (options.gitUrl) {
           spinner.text = 'Cloning repository...';
-          const tempDir = path.join(process.cwd(), '.oggy-temp-repo');
           const { execSync } = require('child_process');
+          const os = require('os');
+          
+          // Create a unique temporary directory
+          const timestamp = Date.now();
+          const randomId = Math.random().toString(36).substring(7);
+          tempDir = path.join(os.tmpdir(), `oggy-temp-${timestamp}-${randomId}`);
           
           try {
-            execSync(`git clone ${options.gitUrl} ${tempDir}`, { stdio: 'pipe' });
+            // Ensure temp directory doesn't exist
+            if (fs.existsSync(tempDir)) {
+              fs.rmSync(tempDir, { recursive: true, force: true });
+            }
+
+            // Build git clone command
+            const branchOption = options.branch ? `--branch ${options.branch} ` : '';
+            const cloneCmd = `git clone --depth 1 ${branchOption}"${options.gitUrl}" "${tempDir}"`;
+            
+            spinner.text = `Cloning repository from ${options.gitUrl}${options.branch ? ` (branch: ${options.branch})` : ''}...`;
+            
+            try {
+              execSync(cloneCmd, { 
+                stdio: 'pipe',
+                encoding: 'utf8'
+              });
+            } catch (cloneError: any) {
+              // If clone fails, try to get stderr for better error message
+              throw new Error(cloneError.stderr || cloneError.message || 'Git clone failed');
+            }
+            
+            spinner.text = 'Repository cloned, analyzing...';
             const tempCommitAnalyzer = new CommitAnalyzer(tempDir);
-            spinner.text = 'Analyzing cloned repository...';
             commit = await tempCommitAnalyzer.getLatestCommit();
             
-            // Clean up temp directory after analysis
-            process.on('exit', () => {
+            if (options.keepClone) {
+              console.log(chalk.gray(`\nCloned repository kept at: ${tempDir}`));
+              tempDir = null; // Prevent cleanup
+            }
+            
+            spinner.succeed('Remote repository analyzed successfully');
+          } catch (error: any) {
+            spinner.fail('Failed to clone repository');
+            
+            // Clean error message
+            let errorMessage = error.message || 'Unknown error';
+            if (error.stderr) {
+              errorMessage = error.stderr.toString();
+            }
+            
+            // Provide helpful error messages
+            if (errorMessage.includes('not found') || errorMessage.includes('repository') && errorMessage.includes('not exist')) {
+              console.error(chalk.red('Error: Repository not found or URL is incorrect'));
+              console.log(chalk.yellow('Please check the repository URL and try again'));
+            } else if (errorMessage.includes('authentication') || errorMessage.includes('permission')) {
+              console.error(chalk.red('Error: Authentication failed'));
+              console.log(chalk.yellow('For private repositories, use SSH URL with proper credentials'));
+            } else if (errorMessage.includes('Could not resolve host')) {
+              console.error(chalk.red('Error: Network error - cannot reach the repository'));
+              console.log(chalk.yellow('Please check your internet connection'));
+            } else {
+              console.error(chalk.red(`Error: ${errorMessage}`));
+            }
+            
+            // Clean up temp directory
+            if (tempDir && fs.existsSync(tempDir)) {
               try {
                 fs.rmSync(tempDir, { recursive: true, force: true });
               } catch (e) {}
-            });
-          } catch (error: any) {
-            spinner.fail('Failed to clone repository');
-            console.error(chalk.red(`Error: ${error.message}`));
+            }
             process.exit(1);
           }
         } else if (options.wholeCodebase) {
           spinner.text = 'Analyzing entire codebase...';
           commit = await commitAnalyzer.getCodebaseAnalysis();
+          spinner.succeed('Codebase information retrieved');
         } else if (options.unstaged) {
           spinner.text = 'Analyzing unstaged changes...';
           commit = await commitAnalyzer.getUnstagedChanges();
+          spinner.succeed('Unstaged changes retrieved');
         } else if (options.commit) {
           spinner.text = `Analyzing commit ${options.commit}...`;
           commit = await commitAnalyzer.getCommitByHash(options.commit);
+          spinner.succeed('Commit information retrieved');
         } else {
           spinner.text = 'Analyzing latest commit...';
           commit = await commitAnalyzer.getLatestCommit();
+          spinner.succeed('Commit information retrieved');
         }
-        spinner.succeed('Commit information retrieved');
       } catch (error: any) {
         spinner.fail('Failed to fetch commit');
         console.error(chalk.red(`Error: ${error.message}`));
+        
+        // Clean up temp directory on error
+        if (tempDir && fs.existsSync(tempDir)) {
+          try {
+            fs.rmSync(tempDir, { recursive: true, force: true });
+          } catch (e) {
+            // Ignore cleanup errors
+          }
+        }
+        
         process.exit(1);
       }
       const model = options.model || process.env.GROQ_MODEL || 'llama-3.3-70b-versatile';
@@ -198,10 +266,21 @@ program
       }
       const reporter = new ReportGenerator(config);
       reporter.printReport(commit, result);
+      
       if (options.output) {
         reporter.saveReportToFile(commit, result, options.output);
         console.log(chalk.green(`Report saved to ${options.output}\n`));
       }
+      
+      // Clean up temp directory if it was created
+      if (tempDir && fs.existsSync(tempDir)) {
+        try {
+          fs.rmSync(tempDir, { recursive: true, force: true });
+        } catch (e) {
+          // Ignore cleanup errors
+        }
+      }
+      
       if (result.status === 'not-ready' || result.score < config.analysis.minScore) {
         process.exit(1);
       }
@@ -211,6 +290,16 @@ program
       if (error.stack && process.env.DEBUG) {
         console.error(chalk.gray(error.stack));
       }
+      
+      // Clean up temp directory on error
+      if (tempDir && fs.existsSync(tempDir)) {
+        try {
+          fs.rmSync(tempDir, { recursive: true, force: true });
+        } catch (e) {
+          // Ignore cleanup errors
+        }
+      }
+      
       process.exit(1);
     }
   });

@@ -97,7 +97,7 @@ export class CodeAnalyzer {
       'breaking change',
       'breaking:',
       'BREAKING:',
-      '!:' // Conventional Commits breaking change
+      '!:' 
     ];
 
     return breakingKeywords.some(keyword => 
