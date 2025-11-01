@@ -41,6 +41,9 @@ export interface CommitInfo {
   author: string;
   date: string;
   files: FileChange[];
+  issueNumber?: number;
+  issueTitle?: string;
+  issueBody?: string;
 }
 
 export interface FileChange {
@@ -58,6 +61,12 @@ export interface AnalysisResult {
   issues: Issue[];
   suggestions: Suggestion[];
   prDescription?: string;
+  issueRelevance?: {
+    isRelevant: boolean;
+    score: number;
+    explanation: string;
+    mismatches: string[];
+  };
 }
 
 export interface Issue {

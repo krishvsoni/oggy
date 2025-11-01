@@ -18,6 +18,11 @@ export class ReportGenerator {
         console.log(`   Message: ${chalk.white(commit.message)}`);
         console.log(`   Author:  ${chalk.gray(commit.author)}`);
         console.log(`   Files:   ${chalk.gray(commit.files.length)} changed`);
+        
+        if (commit.issueNumber && commit.issueTitle) {
+            console.log(chalk.bold('\nLinked Issue:'));
+            console.log(`   #${commit.issueNumber}: ${chalk.cyan(commit.issueTitle)}`);
+        }
 
         console.log(chalk.bold('\nOverall Score:'));
         const scoreColor = result.score >= 80 ? chalk.green : 
@@ -31,6 +36,25 @@ export class ReportGenerator {
 
         console.log(chalk.bold('\nSummary:'));
         console.log(chalk.gray('   ' + result.summary));
+
+        // Display issue relevance if available
+        if (result.issueRelevance) {
+            console.log(chalk.bold('\nIssue Relevance Analysis:'));
+            const relevanceColor = result.issueRelevance.isRelevant ? chalk.green : chalk.red;
+            const scoreColor = result.issueRelevance.score >= 70 ? chalk.green :
+                             result.issueRelevance.score >= 50 ? chalk.yellow : chalk.red;
+            
+            console.log(`   Status: ${relevanceColor(result.issueRelevance.isRelevant ? 'RELEVANT ✓' : 'NOT RELEVANT ✗')}`);
+            console.log(`   Score:  ${scoreColor(result.issueRelevance.score + '/100')}`);
+            console.log(`   ${chalk.gray(result.issueRelevance.explanation)}`);
+            
+            if (result.issueRelevance.mismatches && result.issueRelevance.mismatches.length > 0) {
+                console.log(chalk.yellow('\n   Potential Mismatches:'));
+                result.issueRelevance.mismatches.forEach(mismatch => {
+                    console.log(`      • ${chalk.yellow(mismatch)}`);
+                });
+            }
+        }
 
         if (result.issues && result.issues.length > 0) {
             console.log(chalk.bold('\nIssues Found:'));
@@ -123,11 +147,32 @@ export class ReportGenerator {
         md += `- **Hash:** \`${commit.hash}\`\n`;
         md += `- **Message:** ${commit.message}\n`;
         md += `- **Author:** ${commit.author}\n`;
-        md += `- **Files Changed:** ${commit.files.length}\n\n`;
+        md += `- **Files Changed:** ${commit.files.length}\n`;
+        
+        if (commit.issueNumber && commit.issueTitle) {
+            md += `- **Linked Issue:** #${commit.issueNumber} - ${commit.issueTitle}\n`;
+        }
+        
+        md += `\n`;
         
         md += `## Analysis Results\n\n`;
         md += `- **Score:** ${result.score}/100\n`;
         md += `- **Status:** ${result.status}\n\n`;
+        
+        if (result.issueRelevance) {
+            md += `### Issue Relevance\n\n`;
+            md += `- **Relevant:** ${result.issueRelevance.isRelevant ? '✓ Yes' : '✗ No'}\n`;
+            md += `- **Relevance Score:** ${result.issueRelevance.score}/100\n`;
+            md += `- **Explanation:** ${result.issueRelevance.explanation}\n\n`;
+            
+            if (result.issueRelevance.mismatches && result.issueRelevance.mismatches.length > 0) {
+                md += `**Potential Mismatches:**\n\n`;
+                result.issueRelevance.mismatches.forEach(m => {
+                    md += `- ${m}\n`;
+                });
+                md += '\n';
+            }
+        }
         
         md += `### Summary\n\n${result.summary}\n\n`;
         

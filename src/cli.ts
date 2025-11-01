@@ -7,6 +7,7 @@ import { CommitAnalyzer } from './analyzers/commit';
 import { loadConfig, validateConfig } from './analyzers/config';
 import { AgentOrchestrator } from './agent/orchestrator';
 import { ReportGenerator } from './analyzers/report';
+import { GitHubHelper } from './utils/github';
 import ora from 'ora';
 import path from 'path';
 import fs from 'fs';
@@ -250,6 +251,69 @@ program
         
         process.exit(1);
       }
+      
+      // Check for fork and prompt for issue number
+      const githubHelper = new GitHubHelper();
+      try {
+        const forkInfo = await githubHelper.getForkInfo();
+        
+        if (forkInfo.isFork && forkInfo.parentOwner && forkInfo.parentRepo && !options.gitUrl) {
+          console.log(chalk.cyan(`\n🔍 Detected fork of ${forkInfo.parentOwner}/${forkInfo.parentRepo}`));
+          
+          // Prompt for issue number
+          const readline = require('readline').promises;
+          const rl = readline.createInterface({
+            input: process.stdin,
+            output: process.stdout
+          });
+          
+          try {
+            const issueInput = await rl.question(chalk.yellow('\nAre you solving an issue from the parent repository? Enter issue number (or press Enter to skip): '));
+            rl.close();
+            
+            if (issueInput && issueInput.trim()) {
+              const issueNumber = parseInt(issueInput.trim(), 10);
+              
+              if (!isNaN(issueNumber) && issueNumber > 0) {
+                const issueSpinner = ora(`Fetching issue #${issueNumber} from ${forkInfo.parentOwner}/${forkInfo.parentRepo}...`).start();
+                
+                try {
+                  const issue = await githubHelper.getIssue(forkInfo.parentOwner, forkInfo.parentRepo, issueNumber);
+                  
+                  if (issue) {
+                    issueSpinner.succeed(`Issue #${issueNumber} found: ${issue.title}`);
+                    console.log(chalk.gray(`   Status: ${issue.state}`));
+                    console.log(chalk.gray(`   URL: ${issue.html_url}`));
+                    
+                    // Attach issue info to commit
+                    commit.issueNumber = issue.number;
+                    commit.issueTitle = issue.title;
+                    commit.issueBody = issue.body;
+                    
+                    console.log(chalk.green('\n✓ Commits will be validated against this issue\n'));
+                  } else {
+                    issueSpinner.fail(`Issue #${issueNumber} not found or is a pull request`);
+                    console.log(chalk.yellow('Continuing without issue validation...\n'));
+                  }
+                } catch (error: any) {
+                  issueSpinner.fail(`Failed to fetch issue: ${error.message}`);
+                  console.log(chalk.yellow('Continuing without issue validation...\n'));
+                }
+              } else {
+                console.log(chalk.gray('Invalid issue number, skipping issue validation...\n'));
+              }
+            } else {
+              console.log(chalk.gray('Skipping issue validation...\n'));
+            }
+          } catch (error) {
+            rl.close();
+            console.log(chalk.gray('Skipping issue validation...\n'));
+          }
+        }
+      } catch (error) {
+        // Silently continue if fork detection fails
+      }
+      
       const model = options.model || process.env.GROQ_MODEL || 'llama-3.3-70b-versatile';
       const orchestrator = new AgentOrchestrator(apiKey, config, model);
       console.log(chalk.gray(`Using model: ${model}\n`));

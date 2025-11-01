@@ -234,4 +234,55 @@ Return only the title, nothing else.`;
 
         return response.choices[0]?.message?.content?.trim() || commitMessage;
     }
+
+    async checkIssueRelevance(issueContext: string, commitContext: string): Promise<{
+        isRelevant: boolean;
+        score: number;
+        explanation: string;
+        mismatches: string[];
+    }> {
+        const prompt = `You are an expert code reviewer. Analyze whether the commit changes are relevant to solving the GitHub issue.
+
+${issueContext}
+
+${commitContext}
+
+Analyze:
+1. Does the commit address the issue described?
+2. Are the file changes relevant to fixing the issue?
+3. Does the commit message reference the issue appropriately?
+4. Are there any mismatches between what the issue requests and what was changed?
+
+Provide a relevance score from 0-100:
+- 90-100: Highly relevant, directly addresses the issue
+- 70-89: Mostly relevant, addresses core aspects
+- 50-69: Partially relevant, some connection to issue
+- 30-49: Barely relevant, tangential connection
+- 0-29: Not relevant, unrelated changes
+
+Respond in JSON format:
+{
+    "isRelevant": true/false,
+    "score": 0-100,
+    "explanation": "detailed explanation of relevance",
+    "mismatches": ["list of any mismatches or missing aspects"]
+}`;
+
+        const response = await this.client.chat.completions.create({
+            messages: [{ role: 'user', content: prompt }],
+            model: this.model,
+            temperature: 0.3,
+            response_format: { type: 'json_object' }
+        });
+
+        const content = response.choices[0]?.message?.content;
+        if (!content) {
+            throw new Error('No response from Groq API');
+        }
+
+        const result = JSON.parse(content);
+        result.isRelevant = result.score >= 50;
+        
+        return result;
+    }
 }

@@ -43,6 +43,7 @@ Has Tests: ${metrics.testFiles.length > 0}
 Breaking Changes: ${metrics.hasBreakingChanges}
 Production Ready: ${productionAnalysis ? `${productionAnalysis.score}/100` : 'Not analyzed'}
 Focus Areas: ${this.config.agent.focusAreas?.join(', ') || 'General'}
+${commit.issueNumber ? `\nLinked Issue #${commit.issueNumber}: ${commit.issueTitle}` : ''}
         `.trim();
 
         let plan: AgentPlan;
@@ -140,6 +141,55 @@ Focus Areas: ${this.config.agent.focusAreas?.join(', ') || 'General'}
                 .slice(0, this.config.agent.maxSuggestions);
         }
 
+        // Check issue relevance if issue information is provided
+        if (commit.issueNumber && commit.issueTitle && commit.issueBody) {
+            spinner.start('Analyzing issue relevance...');
+            try {
+                const issueRelevance = await this.analyzeIssueRelevance(commit, codeContext);
+                analysisResult.issueRelevance = issueRelevance;
+                spinner.succeed('Issue relevance analyzed');
+            } catch (error) {
+                spinner.warn('Issue relevance check failed');
+            }
+        }
+
         return analysisResult;
+    }
+
+    async analyzeIssueRelevance(commit: CommitInfo, codeContext: string): Promise<{
+        isRelevant: boolean;
+        score: number;
+        explanation: string;
+        mismatches: string[];
+    }> {
+        if (!commit.issueNumber || !commit.issueTitle) {
+            return {
+                isRelevant: true,
+                score: 100,
+                explanation: 'No issue linked for validation',
+                mismatches: []
+            };
+        }
+
+        const issueContext = `
+Issue #${commit.issueNumber}: ${commit.issueTitle}
+
+Issue Description:
+${commit.issueBody || 'No description provided'}
+        `.trim();
+
+        const commitContext = `
+Commit Message: ${commit.message}
+
+Files Changed:
+${commit.files.map(f => `- ${f.path} (${f.status})`).join('\n')}
+
+Code Changes Summary:
+${codeContext.substring(0, 4000)}
+        `.trim();
+
+        const result = await this.groqAgent.checkIssueRelevance(issueContext, commitContext);
+        
+        return result;
     }
 }

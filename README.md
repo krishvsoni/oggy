@@ -6,6 +6,7 @@ An intelligent CLI agent that provides comprehensive code analysis for commits, 
 
 - AI-Powered Analysis - Advanced LLM-based code review using Groq's fast inference
 - Agent Architecture - Intelligent planning and reasoning, not just simple prompts
+- **GitHub Issue Tracking** - Detects forked repos and validates commits against parent repository issues
 - Comprehensive Checks - Code quality, security, performance, production readiness
 - Multi-Language Support - TypeScript, JavaScript, Python, Java, Go, Rust, C++, and more
 - Framework-Aware - React, Vue, Angular, Django, Spring, Express, and many others
@@ -106,6 +107,32 @@ oggy analyze --output report.md
 # Use different AI model
 oggy analyze --model llama-3.1-8b-instant
 ```
+
+### GitHub Issue Tracking (for Forked Repositories)
+
+When working on a forked repository, Oggy can validate that your commits are relevant to the issues you're solving:
+
+```bash
+# 1. Ensure your fork has an upstream remote
+git remote add upstream https://github.com/ORIGINAL_OWNER/ORIGINAL_REPO.git
+
+# 2. Run analysis - you'll be prompted for the issue number
+oggy analyze
+
+# Example interaction:
+# Detected fork of krishvsoni/oggy
+# Are you solving an issue from the parent repository? Enter issue number: 42
+# ✓ Issue #42 found: Add support for TypeScript configuration files
+# ✓ Commits will be validated against this issue
+```
+
+The analysis will include an **Issue Relevance** section showing:
+- Relevance score (0-100)
+- Whether changes address the issue
+- Detailed explanation
+- Potential mismatches or missing aspects
+
+📖 See [ISSUE_TRACKING.md](./ISSUE_TRACKING.md) for detailed documentation.
 
 ### Configuration
 ```bash
