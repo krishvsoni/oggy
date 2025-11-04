@@ -1,4 +1,4 @@
-# Oggy - AI-Powered Code Analysis CLI
+<img width="934" height="339" alt="image" src="https://github.com/user-attachments/assets/160792da-8199-4484-b219-1af99f473def" />
 
 An intelligent CLI agent that provides comprehensive code analysis for commits, entire codebases, and production readiness. Built with AI-powered insights for modern development workflows.
 
